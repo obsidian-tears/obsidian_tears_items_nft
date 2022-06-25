@@ -5,20 +5,11 @@
     "obsidian_tears_items_nft": {
       "type": "motoko",
       "main": "src/obsidian_tears_items_nft/main.mo"
-    },
-    "obsidian_tears_items_nft_assets": {
-      "type": "assets",
-      "source": [
-        "src/obsidian_tears_items_nft_assets/assets"
-      ],
-      "dependencies": [
-        "obsidian_tears_items_nft"
-      ]
     }
   },
   "defaults": {
     "build": {
-      "packtool": "",
+      "packtool": "vessel sources",
       "args": ""
     }
   },
