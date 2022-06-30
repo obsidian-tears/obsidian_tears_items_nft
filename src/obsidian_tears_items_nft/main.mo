@@ -29,7 +29,7 @@ import ExtCore "../motoko/ext/Core";
 import ExtNonFungible "../motoko/ext/NonFungible";
 import SVG "../svg";
 
-actor class ObsidianTears() = this {
+actor class ObsidianTearsItems() = this {
   
   // Types
   type Time = Time.Time;
@@ -153,6 +153,10 @@ actor class ObsidianTears() = this {
     name : Text;
     canister : Text;
   };
+
+  //OBSIDIANTEARS 
+  private let _characterCanister = "dhyds-jaaaa-aaaao-aaiia-cai";
+  private let _gameCanister = "gagfs-yqaaa-aaaao-aaiva-cai";
   
   private let EXTENSIONS : [Extension] = ["@ext/common", "@ext/nonfungible"];
   
@@ -181,7 +185,6 @@ actor class ObsidianTears() = this {
 	private stable var _transactions : [Transaction] = [];
   private stable var _supply : Balance  = 0;
   private stable var _minter : Principal  = Principal.fromText("6ulqo-ikasf-xzltp-ylrhu-qt4gt-nv4rz-gd46e-nagoe-3bo7b-kbm3h-bqe");
-  private stable var _gameCanister : Principal  = Principal.fromText("6ulqo-ikasf-xzltp-ylrhu-qt4gt-nv4rz-gd46e-nagoe-3bo7b-kbm3h-bqe");
   private stable var _nextTokenId : TokenIndex  = 0;
 
   //State functions
@@ -261,8 +264,10 @@ actor class ObsidianTears() = this {
     (entrepotRoyaltyAddress, 1000), //Entrepot Fee 1%
   ];
   
-  stable var airdrop : [AccountIdentifier] = []; //Airdrops
-  stable var reservedAmount : Nat64 = 0; //Reserved
+  stable var airdrop : [AccountIdentifier] = [
+
+  ]; //Airdrops
+  stable var reservedAmount : Nat64 = 50; //Reserved
   stable var saleCommission : Nat64 = 6000; //Sale price
   stable var salePrice : Nat64 = 0; //Sale price
   stable var whitelistPrice : Nat64 = 0; //Discount price
@@ -1392,6 +1397,14 @@ actor class ObsidianTears() = this {
     };
     _addToUserTokens(tindex, receiver);
   };
+
+  public shared({ caller }) func transferTokensToUser(tindices : [TokenIndex], receiver : AccountIdentifier) : () {
+    assert(caller == _minter or caller == Principal.fromText(_characterCanister));
+    for (index in tindices.vals()) {
+      _transferTokenToUser(index, receiver);
+    };
+  };
+
   func _removeFromUserTokens(tindex : TokenIndex, owner : AccountIdentifier) : () {
     switch(_owners.get(owner)) {
       case(?ownersTokens) _owners.put(owner, Array.filter(ownersTokens, func (a : TokenIndex) : Bool { (a != tindex) }));
@@ -1496,7 +1509,7 @@ actor class ObsidianTears() = this {
 
   // use this function to mint nfts
   public shared(msg) func _mintNftsFromArray(tomint : [[Nat8]]){
-    assert(msg.caller == _minter);
+    assert(msg.caller == _minter or msg.caller == Principal.fromText(_gameCanister));
     for(a in tomint.vals()){
       _tokenMetadata.put(_nextTokenId, #nonfungible({ metadata = ?Blob.fromArray(a) }));
       _transferTokenToUser(_nextTokenId, "0000");
@@ -1530,7 +1543,7 @@ actor class ObsidianTears() = this {
   };
 
   public shared(msg) func mintItem(data : [Nat8], recipient : AccountIdentifier) : () {
-    assert(msg.caller == _minter or msg.caller == _gameCanister);
+    assert(msg.caller == _minter or msg.caller == Principal.fromText(_gameCanister));
     _tokenMetadata.put(_nextTokenId, #nonfungible({ metadata = ?Blob.fromArray(data) }));
     _transferTokenToUser(_nextTokenId, recipient);
     _supply := _supply + 1;
