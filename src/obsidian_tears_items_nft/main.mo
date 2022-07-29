@@ -51,7 +51,7 @@ actor class ObsidianTearsItems() = this {
     Create a store of base64 encoded PNGs indexed by item index
     rarity level is for determining background color
     itemId is within itemType
-    Metadata :[UInt8] => [itemType, itemId, modifier, rarityLevel, ...typeSpecificMetadata]
+    Metadata :[UInt8] => [background (rarity), itemType, itemId, modifier, ...typeSpecificMetadata]
     itemTypes: Weapon, Armor, Item
     WeaponMetadata :[UInt8] => [
       classRestrictions (0-all, 1-mage only, 2-heavy only, 3-mid+),
