@@ -1550,6 +1550,29 @@ actor class ObsidianTearsItems() = this {
     _nextTokenId := _nextTokenId + 1;
   };
 
+  public shared(msg) func mintItems(data : [[Nat8]], recipients : [AccountIdentifier]) : () {
+    assert(msg.caller == _minter or msg.caller == Principal.fromText(_gameCanister));
+    for (i in Iter.range(0,recipients.size()-1)) {
+      _tokenMetadata.put(_nextTokenId, #nonfungible({ metadata = ?Blob.fromArray(data[i]) }));
+      _transferTokenToUser(_nextTokenId, recipients[i]);
+      _supply := _supply + 1;
+      _nextTokenId := _nextTokenId + 1;
+    };
+  };
+
+  public shared(msg) func reset() : () {
+    assert(msg.caller == _minter);
+    _nextTokenId :=0;
+    _supply := 0;
+    _registryState := [];
+  	_tokenMetadataState := [];
+    _ownersState := [];
+    _registry := HashMap.fromIter(_registryState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
+    _tokenMetadata := HashMap.fromIter(_tokenMetadataState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
+ 	  _owners := HashMap.fromIter(_ownersState.vals(), 0, AID.equal, AID.hash);
+  };
+
+
   public shared(msg) func prepLaunch(
     new_airdrop : [AccountIdentifier],
     new_reservedAmount : Nat64,
