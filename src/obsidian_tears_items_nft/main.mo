@@ -72,7 +72,7 @@ actor class ObsidianTearsItems() = this {
     asset : Nat32;
   };
 
-  //Marketplace
+  // Marketplace
   type Transaction = {
     token : TokenIdentifier;
     seller : Principal;
@@ -112,7 +112,7 @@ actor class ObsidianTearsItems() = this {
     account_balance_dfx : shared query AccountBalanceArgs -> async ICPTs;
   };
 
-  //Cap
+  // Cap
   type CapDetailValue = {
     #I64 : Int64;
     #U64 : Nat64;
@@ -135,6 +135,7 @@ actor class ObsidianTearsItems() = this {
     details : [(Text, CapDetailValue)];
     caller : Principal;
   };
+
   //EXTv2 SALE
   private stable var _disbursementsState : [(TokenIndex, AccountIdentifier, SubAccount, Nat64)] = [];
   private stable var _nextSubAccount : Nat = 0;
@@ -155,7 +156,7 @@ actor class ObsidianTearsItems() = this {
     canister : Text;
   };
 
-  //OBSIDIANTEARS
+  // Canister Ids
   private let _characterCanister = Env.getCharacterCanisterId();
   private let _gameCanister = Env.getGameCanisterId();
 
@@ -185,7 +186,7 @@ actor class ObsidianTearsItems() = this {
   private stable var _usedPaymentAddressess : [(AccountIdentifier, Principal, SubAccount)] = [];
   private stable var _transactions : [Transaction] = [];
   private stable var _supply : Balance = 0;
-  private stable var _minter : Principal = Principal.fromText(Env.getAdminPrincipal());
+  private var _minter : Principal = Principal.fromText(Env.getAdminPrincipal());
   private stable var _nextTokenId : TokenIndex = 0;
 
   //State functions
