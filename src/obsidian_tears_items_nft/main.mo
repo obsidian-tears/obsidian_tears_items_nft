@@ -28,6 +28,7 @@ import ExtCommon "motoko/ext/Common";
 import ExtCore "motoko/ext/Core";
 import ExtNonFungible "motoko/ext/NonFungible";
 import SVG "svg";
+import Env "env";
 
 actor class ObsidianTearsItems() = this {
 
@@ -155,8 +156,8 @@ actor class ObsidianTearsItems() = this {
   };
 
   //OBSIDIANTEARS
-  private let _characterCanister = "dhyds-jaaaa-aaaao-aaiia-cai";
-  private let _gameCanister = "gagfs-yqaaa-aaaao-aaiva-cai";
+  private let _characterCanister = Env.getCharacterCanisterId();
+  private let _gameCanister = Env.getGameCanisterId();
 
   private let EXTENSIONS : [Extension] = ["@ext/common", "@ext/nonfungible"];
 
@@ -184,7 +185,7 @@ actor class ObsidianTearsItems() = this {
   private stable var _usedPaymentAddressess : [(AccountIdentifier, Principal, SubAccount)] = [];
   private stable var _transactions : [Transaction] = [];
   private stable var _supply : Balance = 0;
-  private stable var _minter : Principal = Principal.fromText("6ulqo-ikasf-xzltp-ylrhu-qt4gt-nv4rz-gd46e-nagoe-3bo7b-kbm3h-bqe");
+  private stable var _minter : Principal = Principal.fromText(Env.getAdminPrincipal());
   private stable var _nextTokenId : TokenIndex = 0;
 
   //State functions
