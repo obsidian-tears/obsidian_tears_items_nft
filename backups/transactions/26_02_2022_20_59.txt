@@ -1,0 +1,25 @@
+(
+  vec {
+    record {
+      token = "tj2rd-tqkor-uwiaa-aaaaa-dqacf-aaqca-aaacy-a";
+      time = 1_661_843_858_989_789_711 : int;
+      seller = principal "4lzmx-yuaib-5qpl6-vj7rs-lywkk-wzkty-zyk4g-imuqv-kfykz-wsrzu-rae";
+      buyer = "d0b2ef220f292ff5de1760cbff0b30ffa99fe8fb7e7c2537846ef34e0192e2ad";
+      price = 50_000_000 : nat64;
+    };
+    record {
+      token = "tj2rd-tqkor-uwiaa-aaaaa-dqacf-aaqca-aaacy-a";
+      time = 1_663_700_033_410_715_495 : int;
+      seller = principal "5kvat-jqte2-5gbuu-k43nw-sc3sr-rrnm4-43ull-svamw-53zub-nsupw-qae";
+      buyer = "e6388ce18f68b238479bcf5c3f2a1a5e2b42ebafe0897ff818ad508f1fd0f62a";
+      price = 95_000_000 : nat64;
+    };
+    record {
+      token = "qr2oh-jqkor-uwiaa-aaaaa-dqacf-aaqca-aaaar-a";
+      time = 1_666_873_670_047_277_898 : int;
+      seller = principal "5k5s6-bgeul-fzx5p-6ytni-jjouc-ihurx-fd4bv-uusyg-maf2k-dy5e5-iqe";
+      buyer = "1289bdd7b587c94a1c1a9a6ed243cbe95bf0431fc52d6480b4fdf724f6dbac20";
+      price = 100_000_000 : nat64;
+    };
+  },
+)

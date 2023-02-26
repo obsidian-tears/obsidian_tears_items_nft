@@ -22,12 +22,12 @@ import Time "mo:base/Time";
 import Cap "mo:cap/Cap";
 import Encoding "mo:encoding/Binary";
 
-import AID "../motoko/util/AccountIdentifier";
-import ExtAllowance "../motoko/ext/Allowance";
-import ExtCommon "../motoko/ext/Common";
-import ExtCore "../motoko/ext/Core";
-import ExtNonFungible "../motoko/ext/NonFungible";
-import SVG "../svg";
+import AID "motoko/util/AccountIdentifier";
+import ExtAllowance "motoko/ext/Allowance";
+import ExtCommon "motoko/ext/Common";
+import ExtCore "motoko/ext/Core";
+import ExtNonFungible "motoko/ext/NonFungible";
+import SVG "svg";
 
 actor class ObsidianTearsItems() = this {
 
