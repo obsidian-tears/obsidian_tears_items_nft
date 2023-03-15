@@ -1,5 +1,5 @@
 module {
-    public let network = "staging"; // ic, staging, local, beta
+    public let network = "local"; // ic, staging, local, beta
 
     public func getGameCanisterId() : Text {
         if (network == "ic") return "gagfs-yqaaa-aaaao-aaiva-cai";
