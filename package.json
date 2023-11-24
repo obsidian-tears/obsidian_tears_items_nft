@@ -1,0 +1,13 @@
+{
+  "name": "obsidian_tears_items_nft",
+  "version": "1.0.0",
+  "description": "This canister holds all item NFTs for Obsidian Tears. This includes weapons, armor, potions, and whatever else you might purchase or find in game. Pretty much everything except the characters will be in this container.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ic-mops": "^0.34.4"
+  }
+}
