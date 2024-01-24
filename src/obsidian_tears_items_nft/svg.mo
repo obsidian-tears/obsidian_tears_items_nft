@@ -1,6 +1,6 @@
 import Nat8 "mo:base/Nat8";
 import Text "mo:base/Text";
-import ExtCore "motoko/ext/Core";
+import ExtCore "lib/ext/Core";
 
 import Weapons "elements/weapons";
 import Armor "elements/armor";
