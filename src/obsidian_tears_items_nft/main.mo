@@ -28,11 +28,10 @@ import AID "lib/util/AccountIdentifier";
 import ExtAllowance "lib/ext/Allowance";
 import ExtCommon "lib/ext/Common";
 import ExtCore "lib/ext/Core";
-import ExtNonFungible "lib/ext/NonFungible";
 import SVG "svg";
 import Env "env";
 
-actor class ObsidianTearsItems() = this {
+actor class () = this {
 
   // Types
   type Time = Time.Time;
@@ -148,7 +147,7 @@ actor class ObsidianTearsItems() = this {
   let CapService = Cap.Cap(?"lj532-6iaaa-aaaah-qcc7a-cai", capRootBucketId);
   private stable var _capEventsState : [CapIndefiniteEvent] = [];
   private var _capEvents : List.List<CapIndefiniteEvent> = List.fromArray(_capEventsState);
-  private stable var _runHeartbeat : Bool = true;
+  stable var _timerFailedAt : Time = 0;
 
   type AssetHandle = Text;
   type Asset = {
@@ -317,7 +316,7 @@ actor class ObsidianTearsItems() = this {
         _i += 1;
       };
     };
-    _tokensForSale := switch (_owners.get("0000")) { case (?t) t; case (_)[] };
+    _tokensForSale := switch (_owners.get("0000")) { case (?t) t; case (_) [] };
     if (reservedAmount > 0) {
       for (t in nextTokens(reservedAmount).vals()) {
         _transferTokenToUser(t, teamNftAddress);
@@ -397,7 +396,7 @@ actor class ObsidianTearsItems() = this {
   func addToWhitelist(address : AccountIdentifier) : () {
     _whitelist := _append(_whitelist, address);
   };
-  public query (msg) func saleTransactions() : async [SaleTransaction] {
+  public query func saleTransactions() : async [SaleTransaction] {
     _saleTransactions;
   };
   type SaleSettings = {
@@ -415,7 +414,7 @@ actor class ObsidianTearsItems() = this {
   func availableTokens() : Nat {
     _tokensForSale.size();
   };
-  public query (msg) func salesSettings(address : AccountIdentifier) : async SaleSettings {
+  public query func salesSettings(address : AccountIdentifier) : async SaleSettings {
     return {
       price = getAddressPrice(address);
       salePrice = salePrice;
@@ -436,7 +435,7 @@ actor class ObsidianTearsItems() = this {
     };
     ret;
   };
-  public shared (msg) func reserve(amount : Nat64, quantity : Nat64, address : AccountIdentifier, _subaccountNOTUSED : SubAccount) : async Result.Result<(AccountIdentifier, Nat64), Text> {
+  public shared func reserve(amount : Nat64, quantity : Nat64, address : AccountIdentifier, _subaccountNOTUSED : SubAccount) : async Result.Result<(AccountIdentifier, Nat64), Text> {
     if (Time.now() < publicSaleStart) {
       return #err("The sale has not started yet");
     };
@@ -491,7 +490,7 @@ actor class ObsidianTearsItems() = this {
     #ok((paymentAddress, total));
   };
 
-  public shared (msg) func retreive(paymentaddress : AccountIdentifier) : async Result.Result<(), Text> {
+  public shared func retreive(paymentaddress : AccountIdentifier) : async Result.Result<(), Text> {
     switch (_salesSettlements.get(paymentaddress)) {
       case (?settlement) {
         let response : ICPTs = await LEDGER_CANISTER.account_balance_dfx({
@@ -559,20 +558,24 @@ actor class ObsidianTearsItems() = this {
   public query func failedSales() : async [(AccountIdentifier, SubAccount)] {
     _failedSales;
   };
-  //EXTv2 SALE
-  system func heartbeat() : async () {
-    if (_runHeartbeat == true) {
-      try {
-        await cronSalesSettlements();
-        await cronDisbursements();
-        await cronSettlements();
-        await cronCapEvents();
-      } catch (e) {
-        _runHeartbeat := false;
-      };
+
+  // EXTv2 SALE
+  system func timer(setGlobalTimer : Nat64 -> ()) : async () {
+    let secondsMore : Nat64 = if (Env.network == "ic") 30_000_000_000 else 2_592_000_000_000_000; // nanoseconds: 30 seconds || 30 days
+    let next = Nat64.fromIntWrap(Time.now()) + secondsMore;
+    setGlobalTimer(next);
+
+    try {
+      await cronSalesSettlements();
+      await cronDisbursements();
+      await cronSettlements();
+      await cronCapEvents();
+    } catch (e) {
+      _timerFailedAt := Time.now();
     };
   };
-  public shared (msg) func cronDisbursements() : async () {
+
+  public shared func cronDisbursements() : async () {
     var _cont : Bool = true;
     while (_cont) {
       _cont := false;
@@ -581,7 +584,7 @@ actor class ObsidianTearsItems() = this {
         case (?d) {
           _disbursements := last.1;
           try {
-            var bh = await LEDGER_CANISTER.send_dfx({
+            ignore await LEDGER_CANISTER.send_dfx({
               memo = Encoding.BigEndian.toNat64(Blob.toArray(Principal.toBlob(Principal.fromText(ExtCore.TokenIdentifier.fromPrincipal(Principal.fromActor(this), d.0)))));
               amount = { e8s = d.3 };
               fee = { e8s = 10000 };
@@ -599,14 +602,14 @@ actor class ObsidianTearsItems() = this {
       };
     };
   };
-  public shared (msg) func cronSalesSettlements() : async () {
+  public shared func cronSalesSettlements() : async () {
     for (ss in _salesSettlements.entries()) {
       if (ss.1.expires < Time.now()) {
         ignore (await retreive(ss.0));
       };
     };
   };
-  public shared (msg) func cronSettlements() : async () {
+  public shared func cronSettlements() : async () {
     for (settlement in unlockedSettlements().vals()) {
       ignore (settle(ExtCore.TokenIdentifier.fromPrincipal(Principal.fromActor(this), settlement.0)));
     };
@@ -629,8 +632,8 @@ actor class ObsidianTearsItems() = this {
       unlockedSettlements().size(),
     ];
   };
-  public query func isHeartbeatRunning() : async Bool {
-    _runHeartbeat;
+  public query func lastTimerFailedAt() : async Time {
+    _timerFailedAt;
   };
   //Listings
   //EXTv2 SALE
@@ -653,7 +656,7 @@ actor class ObsidianTearsItems() = this {
   func _addDisbursement(d : (TokenIndex, AccountIdentifier, SubAccount, Nat64)) : () {
     _disbursements := List.push(d, _disbursements);
   };
-  public shared (msg) func lock(tokenid : TokenIdentifier, price : Nat64, address : AccountIdentifier, _subaccountNOTUSED : SubAccount) : async Result.Result<AccountIdentifier, CommonError> {
+  public shared func lock(tokenid : TokenIdentifier, price : Nat64, address : AccountIdentifier, _subaccountNOTUSED : SubAccount) : async Result.Result<AccountIdentifier, CommonError> {
     if (ExtCore.TokenIdentifier.isPrincipal(tokenid, Principal.fromActor(this)) == false) {
       return #err(#InvalidToken(tokenid));
     };
@@ -706,7 +709,7 @@ actor class ObsidianTearsItems() = this {
       };
     };
   };
-  public shared (msg) func settle(tokenid : TokenIdentifier) : async Result.Result<(), CommonError> {
+  public shared func settle(tokenid : TokenIdentifier) : async Result.Result<(), CommonError> {
     if (ExtCore.TokenIdentifier.isPrincipal(tokenid, Principal.fromActor(this)) == false) {
       return #err(#InvalidToken(tokenid));
     };
@@ -882,7 +885,7 @@ actor class ObsidianTearsItems() = this {
   func _capAdd(event : CapIndefiniteEvent) : () {
     _capEvents := List.push(event, _capEvents);
   };
-  public shared (msg) func cronCapEvents() : async () {
+  public shared func cronCapEvents() : async () {
     var _cont : Bool = true;
     while (_cont) {
       _cont := false;
@@ -902,7 +905,7 @@ actor class ObsidianTearsItems() = this {
       };
     };
   };
-  public shared (msg) func initCap() : async () {
+  public shared func initCap() : async () {
     if (Option.isNull(capRootBucketId)) {
       try {
         capRootBucketId := await CapService.handshake(Principal.toText(Principal.fromActor(this)), 1_000_000_000_000);
@@ -910,7 +913,7 @@ actor class ObsidianTearsItems() = this {
     };
   };
   private stable var historicExportHasRun : Bool = false;
-  public shared (msg) func historicExport() : async Bool {
+  public shared func historicExport() : async Bool {
     if (historicExportHasRun == false) {
       var events : [CapEvent] = [];
       for (tx in _transactions.vals()) {
@@ -936,22 +939,6 @@ actor class ObsidianTearsItems() = this {
       } catch (e) {};
     };
     historicExportHasRun;
-  };
-  public shared (msg) func adminKillHeartbeat() : async () {
-    assert (msg.caller == _minter);
-    _runHeartbeat := false;
-  };
-  public shared (msg) func adminStartHeartbeat() : async () {
-    assert (msg.caller == _minter);
-    _runHeartbeat := true;
-  };
-  public shared (msg) func adminKillHeartbeatExtra(p : Text) : async () {
-    assert (p == "thisisthepassword");
-    _runHeartbeat := false;
-  };
-  public shared (msg) func adminStartHeartbeatExtra(p : Text) : async () {
-    assert (p == "thisisthepassword");
-    _runHeartbeat := true;
   };
 
   public shared (msg) func setMinter(minter : Principal) : async () {
@@ -1061,7 +1048,7 @@ actor class ObsidianTearsItems() = this {
       };
     };
   };
-  public query func supply(token : TokenIdentifier) : async Result.Result<Balance, CommonError> {
+  public query func supply(_token : TokenIdentifier) : async Result.Result<Balance, CommonError> {
     #ok(_supply);
   };
   public query func getRegistry() : async [(TokenIndex, AccountIdentifier)] {
@@ -1153,13 +1140,13 @@ actor class ObsidianTearsItems() = this {
     };
     results;
   };
-  public query (msg) func allSettlements() : async [(TokenIndex, Settlement)] {
+  public query func allSettlements() : async [(TokenIndex, Settlement)] {
     Iter.toArray(_tokenSettlement.entries());
   };
-  public query (msg) func allPayments() : async [(Principal, [SubAccount])] {
+  public query func allPayments() : async [(Principal, [SubAccount])] {
     Iter.toArray(_payments.entries());
   };
-  public shared (msg) func clearPayments(seller : Principal, payments : [SubAccount]) : async () {
+  public shared func clearPayments(seller : Principal, payments : [SubAccount]) : async () {
     var removedPayments : [SubAccount] = [];
     removedPayments := payments;
     // for (p in payments.vals()){
@@ -1242,24 +1229,11 @@ actor class ObsidianTearsItems() = this {
     body : Blob;
     token : ?HttpStreamingCallbackToken;
   };
-  let NOT_FOUND : HttpResponse = {
-    status_code = 404;
-    headers = [];
-    body = Blob.fromArray([]);
-    streaming_strategy = null;
-  };
-  let BAD_REQUEST : HttpResponse = {
-    status_code = 400;
-    headers = [];
-    body = Blob.fromArray([]);
-    streaming_strategy = null;
-  };
 
   public query func http_request(request : HttpRequest) : async HttpResponse {
     let width : Text = imageWidth;
     let height : Text = imageHeight;
     let ctype : Text = imageType;
-    let path = Iter.toArray(Text.tokens(request.url, #text("/")));
     switch (_getParam(request.url, "tokenid")) {
       case (?tokenid) {
         switch (_getTokenIndex(tokenid)) {
@@ -1411,7 +1385,7 @@ actor class ObsidianTearsItems() = this {
   //Internal cycle management - good general case
   public func acceptCycles() : async () {
     let available = Cycles.available();
-    let accepted = Cycles.accept(available);
+    let accepted = Cycles.accept<system>(available);
     assert (accepted == available);
   };
   public query func availableCycles() : async Nat {
@@ -1490,13 +1464,13 @@ actor class ObsidianTearsItems() = this {
   func _removeFromUserTokens(tindex : TokenIndex, owner : AccountIdentifier) : () {
     switch (_owners.get(owner)) {
       case (?ownersTokens) _owners.put(owner, Array.filter(ownersTokens, func(a : TokenIndex) : Bool { (a != tindex) }));
-      case (_)();
+      case (_) ();
     };
   };
   func _addToUserTokens(tindex : TokenIndex, receiver : AccountIdentifier) : () {
     let ownersTokensNew : [TokenIndex] = switch (_owners.get(receiver)) {
       case (?ownersTokens) _append(ownersTokens, tindex);
-      case (_)[tindex];
+      case (_) [tindex];
     };
     _owners.put(receiver, ownersTokensNew);
   };
@@ -1668,7 +1642,7 @@ actor class ObsidianTearsItems() = this {
   public shared (msg) func prepLaunch(
     new_airdrop : [AccountIdentifier],
     new_reservedAmount : Nat64,
-    new_salePrice : Nat64,
+    _new_salePrice : Nat64,
     new_whitelistPrice : Nat64,
     new_publicSaleStart : Time,
     new_whitelistTime : Time,
