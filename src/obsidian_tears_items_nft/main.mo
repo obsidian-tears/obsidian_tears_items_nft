@@ -19,6 +19,7 @@ import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Debug "mo:base/Debug";
+import Timer "mo:base/Timer";
 import Canistergeek "mo:canistergeek/canistergeek";
 
 import Cap "mo:cap/Cap";
@@ -528,6 +529,10 @@ actor class () = this {
                 _addDisbursement((0, entrepotSaleAddress, settlement.subaccount, fee));
                 var rem : Nat64 = bal - fee : Nat64; //Remove fee from balance and send
                 _addDisbursement((0, teamSaleAddress, settlement.subaccount, rem));
+
+                // run cron outside of this call
+                ignore Timer.setTimer<system>(#seconds 0, runCron);
+
                 return #ok();
               };
             } else {
@@ -561,10 +566,15 @@ actor class () = this {
 
   // EXTv2 SALE
   system func timer(setGlobalTimer : Nat64 -> ()) : async () {
-    let secondsMore : Nat64 = if (Env.network == "ic") 30_000_000_000 else 2_592_000_000_000_000; // nanoseconds: 30 seconds || 30 days
+    let secondsMore : Nat64 = if (Env.network == "ic") 3_600_000_000_000 else 2_592_000_000_000_000; // nanoseconds: 1 hour || 30 days
     let next = Nat64.fromIntWrap(Time.now()) + secondsMore;
     setGlobalTimer(next);
 
+    // clean any queue that wasn't processed in near time
+    await runCron();
+  };
+
+  func runCron() : async () {
     try {
       await cronSalesSettlements();
       await cronDisbursements();
@@ -1615,6 +1625,9 @@ actor class () = this {
     _transferTokenToUser(_nextTokenId, recipient);
     _supply := _supply + 1;
     _nextTokenId := _nextTokenId + 1;
+
+    // run cron outside of this call
+    ignore Timer.setTimer<system>(#seconds 0, runCron);
   };
 
   public shared (msg) func mintItems(data : [[Nat8]], recipients : [AccountIdentifier]) : () {
