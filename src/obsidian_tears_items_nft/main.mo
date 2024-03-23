@@ -1465,7 +1465,7 @@ actor class () = this {
   };
 
   public shared ({ caller }) func transferTokensToUser(tindices : [TokenIndex], receiver : AccountIdentifier) : () {
-    assert (caller == _minter or caller == Principal.fromText(_characterCanister));
+    assert (caller == _minter);
     for (index in tindices.vals()) {
       _transferTokenToUser(index, receiver);
     };
