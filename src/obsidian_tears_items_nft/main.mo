@@ -159,7 +159,6 @@ actor class () = this {
   };
 
   // Canister Ids
-  let _characterCanister = Env.getCharacterCanisterId();
   let _gameCanister = Env.getGameCanisterId();
 
   let EXTENSIONS : [Extension] = ["@ext/common", "@ext/nonfungible"];
