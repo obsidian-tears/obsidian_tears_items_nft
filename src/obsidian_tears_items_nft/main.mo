@@ -139,15 +139,15 @@ actor class () = this {
   };
 
   //EXTv2 SALE
-  private stable var _disbursementsState : [(TokenIndex, AccountIdentifier, SubAccount, Nat64)] = [];
-  private stable var _nextSubAccount : Nat = 0;
-  private var _disbursements : List.List<(TokenIndex, AccountIdentifier, SubAccount, Nat64)> = List.fromArray(_disbursementsState);
+  stable var _disbursementsState : [(TokenIndex, AccountIdentifier, SubAccount, Nat64)] = [];
+  stable var _nextSubAccount : Nat = 0;
+  var _disbursements : List.List<(TokenIndex, AccountIdentifier, SubAccount, Nat64)> = List.fromArray(_disbursementsState);
 
   //CAP
-  private stable var capRootBucketId : ?Text = null;
+  stable var capRootBucketId : ?Text = null;
   let CapService = Cap.Cap(?"lj532-6iaaa-aaaah-qcc7a-cai", capRootBucketId);
-  private stable var _capEventsState : [CapIndefiniteEvent] = [];
-  private var _capEvents : List.List<CapIndefiniteEvent> = List.fromArray(_capEventsState);
+  stable var _capEventsState : [CapIndefiniteEvent] = [];
+  var _capEvents : List.List<CapIndefiniteEvent> = List.fromArray(_capEventsState);
   stable var _timerFailedAt : Time = 0;
 
   type AssetHandle = Text;
@@ -159,37 +159,37 @@ actor class () = this {
   };
 
   // Canister Ids
-  private let _characterCanister = Env.getCharacterCanisterId();
-  private let _gameCanister = Env.getGameCanisterId();
+  let _characterCanister = Env.getCharacterCanisterId();
+  let _gameCanister = Env.getGameCanisterId();
 
-  private let EXTENSIONS : [Extension] = ["@ext/common", "@ext/nonfungible"];
+  let EXTENSIONS : [Extension] = ["@ext/common", "@ext/nonfungible"];
 
   //State work
-  private stable var _registryState : [(TokenIndex, AccountIdentifier)] = [];
-  private stable var _tokenMetadataState : [(TokenIndex, Metadata)] = [];
-  private stable var _ownersState : [(AccountIdentifier, [TokenIndex])] = [];
+  stable var _registryState : [(TokenIndex, AccountIdentifier)] = [];
+  stable var _tokenMetadataState : [(TokenIndex, Metadata)] = [];
+  stable var _ownersState : [(AccountIdentifier, [TokenIndex])] = [];
 
   //For marketplace
-  private stable var _tokenListingState : [(TokenIndex, Listing)] = [];
-  private stable var _tokenSettlementState : [(TokenIndex, Settlement)] = [];
-  private stable var _paymentsState : [(Principal, [SubAccount])] = [];
-  private stable var _refundsState : [(Principal, [SubAccount])] = [];
+  stable var _tokenListingState : [(TokenIndex, Listing)] = [];
+  stable var _tokenSettlementState : [(TokenIndex, Settlement)] = [];
+  stable var _paymentsState : [(Principal, [SubAccount])] = [];
+  stable var _refundsState : [(Principal, [SubAccount])] = [];
 
-  private var _registry : HashMap.HashMap<TokenIndex, AccountIdentifier> = HashMap.fromIter(_registryState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
-  private var _tokenMetadata : HashMap.HashMap<TokenIndex, Metadata> = HashMap.fromIter(_tokenMetadataState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
-  private var _owners : HashMap.HashMap<AccountIdentifier, [TokenIndex]> = HashMap.fromIter(_ownersState.vals(), 0, AID.equal, AID.hash);
+  var _registry : HashMap.HashMap<TokenIndex, AccountIdentifier> = HashMap.fromIter(_registryState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
+  var _tokenMetadata : HashMap.HashMap<TokenIndex, Metadata> = HashMap.fromIter(_tokenMetadataState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
+  var _owners : HashMap.HashMap<AccountIdentifier, [TokenIndex]> = HashMap.fromIter(_ownersState.vals(), 0, AID.equal, AID.hash);
 
   //For marketplace
-  private var _tokenListing : HashMap.HashMap<TokenIndex, Listing> = HashMap.fromIter(_tokenListingState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
-  private var _tokenSettlement : HashMap.HashMap<TokenIndex, Settlement> = HashMap.fromIter(_tokenSettlementState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
-  private var _payments : HashMap.HashMap<Principal, [SubAccount]> = HashMap.fromIter(_paymentsState.vals(), 0, Principal.equal, Principal.hash);
-  private var _refunds : HashMap.HashMap<Principal, [SubAccount]> = HashMap.fromIter(_refundsState.vals(), 0, Principal.equal, Principal.hash);
-  private var ESCROWDELAY : Time = 10 * 60 * 1_000_000_000;
-  private stable var _usedPaymentAddressess : [(AccountIdentifier, Principal, SubAccount)] = [];
-  private stable var _transactions : [Transaction] = [];
-  private stable var _supply : Balance = 0;
-  private var _minter : Principal = Principal.fromText(Env.getAdminPrincipal());
-  private stable var _nextTokenId : TokenIndex = 0;
+  var _tokenListing : HashMap.HashMap<TokenIndex, Listing> = HashMap.fromIter(_tokenListingState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
+  var _tokenSettlement : HashMap.HashMap<TokenIndex, Settlement> = HashMap.fromIter(_tokenSettlementState.vals(), 0, ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
+  var _payments : HashMap.HashMap<Principal, [SubAccount]> = HashMap.fromIter(_paymentsState.vals(), 0, Principal.equal, Principal.hash);
+  var _refunds : HashMap.HashMap<Principal, [SubAccount]> = HashMap.fromIter(_refundsState.vals(), 0, Principal.equal, Principal.hash);
+  var ESCROWDELAY : Time = 10 * 60 * 1_000_000_000;
+  stable var _usedPaymentAddressess : [(AccountIdentifier, Principal, SubAccount)] = [];
+  stable var _transactions : [Transaction] = [];
+  stable var _supply : Balance = 0;
+  var _minter : Principal = Principal.fromText(Env.getAdminPrincipal());
+  stable var _nextTokenId : TokenIndex = 0;
 
   //State functions
   system func preupgrade() {
@@ -253,19 +253,19 @@ actor class () = this {
     buyer : AccountIdentifier;
     time : Time;
   };
-  private stable var _saleTransactions : [SaleTransaction] = [];
-  private stable var _salesSettlementsState : [(AccountIdentifier, Sale)] = [];
-  private stable var _salesPrincipalsState : [(AccountIdentifier, Text)] = [];
-  private stable var _failedSales : [(AccountIdentifier, SubAccount)] = [];
-  private stable var _tokensForSale : [TokenIndex] = [];
-  private stable var _whitelist : [AccountIdentifier] = [];
-  private stable var _soldIcp : Nat64 = 0;
-  private stable var _sold : Nat = 0;
-  private stable var _totalToSell : Nat = 0;
-  private stable var _hasBeenInitiated : Bool = false;
+  stable var _saleTransactions : [SaleTransaction] = [];
+  stable var _salesSettlementsState : [(AccountIdentifier, Sale)] = [];
+  stable var _salesPrincipalsState : [(AccountIdentifier, Text)] = [];
+  stable var _failedSales : [(AccountIdentifier, SubAccount)] = [];
+  stable var _tokensForSale : [TokenIndex] = [];
+  stable var _whitelist : [AccountIdentifier] = [];
+  stable var _soldIcp : Nat64 = 0;
+  stable var _sold : Nat = 0;
+  stable var _totalToSell : Nat = 0;
+  stable var _hasBeenInitiated : Bool = false;
   //Hash tables
-  private var _salesPrincipals : HashMap.HashMap<AccountIdentifier, Text> = HashMap.fromIter(_salesPrincipalsState.vals(), 0, AID.equal, AID.hash);
-  private var _salesSettlements : HashMap.HashMap<AccountIdentifier, Sale> = HashMap.fromIter(_salesSettlementsState.vals(), 0, AID.equal, AID.hash);
+  var _salesPrincipals : HashMap.HashMap<AccountIdentifier, Text> = HashMap.fromIter(_salesPrincipalsState.vals(), 0, AID.equal, AID.hash);
+  var _salesSettlements : HashMap.HashMap<AccountIdentifier, Sale> = HashMap.fromIter(_salesSettlementsState.vals(), 0, AID.equal, AID.hash);
 
   //Setup - Set all variables here
   //==========================================
@@ -332,17 +332,17 @@ actor class () = this {
     _launchPrepped := false;
   };
   //==========================================
-  private func _prng(current : Nat8) : Nat8 {
+  func _prng(current : Nat8) : Nat8 {
     let next : Int = _fromNat8ToInt(current) * 1103515245 + 12345;
     return _fromIntToNat8(next) % 100;
   };
-  private func _fromNat8ToInt(n : Nat8) : Int {
+  func _fromNat8ToInt(n : Nat8) : Int {
     Int8.toInt(Int8.fromNat8(n));
   };
-  private func _fromIntToNat8(n : Int) : Nat8 {
+  func _fromIntToNat8(n : Int) : Nat8 {
     Int8.toNat8(Int8.fromIntWrap(n));
   };
-  private func shuffleTokens(tokens : [TokenIndex]) : [TokenIndex] {
+  func shuffleTokens(tokens : [TokenIndex]) : [TokenIndex] {
     var randomNumber : Nat8 = _fromIntToNat8(publicSaleStart);
     var currentIndex : Nat = tokens.size();
     var ttokens = Array.thaw<TokenIndex>(tokens);
@@ -922,7 +922,7 @@ actor class () = this {
       } catch e {};
     };
   };
-  private stable var historicExportHasRun : Bool = false;
+  stable var historicExportHasRun : Bool = false;
   public shared func historicExport() : async Bool {
     if (historicExportHasRun == false) {
       var events : [CapEvent] = [];
@@ -1347,18 +1347,18 @@ actor class () = this {
     };
   };
 
-  private func _getHttpBody(data : Blob, height : Text, width : Text) : Blob {
+  func _getHttpBody(data : Blob, height : Text, width : Text) : Blob {
     Text.encodeUtf8(SVG.make(Blob.toArray(data), height, width));
   };
 
-  private func _getTokenIndex(token : Text) : ?TokenIndex {
+  func _getTokenIndex(token : Text) : ?TokenIndex {
     if (ExtCore.TokenIdentifier.isPrincipal(token, Principal.fromActor(this)) == false) {
       return null;
     };
     let tokenind = ExtCore.TokenIdentifier.getIndex(token);
     return ?tokenind;
   };
-  private func _getParam(url : Text, param : Text) : ?Text {
+  func _getParam(url : Text, param : Text) : ?Text {
     var _s : Text = url;
     Iter.iterate<Text>(
       Text.split(_s, #text("/")),
@@ -1407,12 +1407,12 @@ actor class () = this {
   // -----------------------------------
 
   stable var _canistergeekMonitorUD : ?Canistergeek.UpgradeData = null;
-  private let canistergeekMonitor = Canistergeek.Monitor();
+  let canistergeekMonitor = Canistergeek.Monitor();
 
   stable var _canistergeekLoggerUD : ?Canistergeek.LoggerUpgradeData = null;
-  private let canistergeekLogger = Canistergeek.Logger();
+  let canistergeekLogger = Canistergeek.Logger();
 
-  private let adminPrincipal : Text = "csvbe-getzk-3k2vt-boxl5-v2mzn-rzn23-oraa7-gjauz-dvoyn-upjlb-3ae";
+  let adminPrincipal : Text = "csvbe-getzk-3k2vt-boxl5-v2mzn-rzn23-oraa7-gjauz-dvoyn-upjlb-3ae";
 
   public query ({ caller }) func getCanistergeekInformation(request : Canistergeek.GetInformationRequest) : async Canistergeek.GetInformationResponse {
     validateCaller(caller);
@@ -1424,14 +1424,14 @@ actor class () = this {
     canistergeekMonitor.updateInformation(request);
   };
 
-  private func validateCaller(principal : Principal) : () {
+  func validateCaller(principal : Principal) : () {
     // data is available only for specific principal
     if (not (Principal.toText(principal) == adminPrincipal)) {
       Debug.trap("Not Authorized");
     };
   };
 
-  //Private
+  // Private
   func _textToNat32(t : Text) : Nat32 {
     var reversed : [Nat32] = [];
     for (c in t.chars()) {
