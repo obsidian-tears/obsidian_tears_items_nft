@@ -530,7 +530,7 @@ actor class () = this {
                 _addDisbursement((0, teamSaleAddress, settlement.subaccount, rem));
 
                 // run cron outside of this call
-                ignore Timer.setTimer<system>(#seconds 0, runCron);
+                ignore Timer.setTimer<system>(#seconds 0, runCronBatch);
 
                 return #ok();
               };
@@ -570,7 +570,20 @@ actor class () = this {
     setGlobalTimer(next);
 
     // clean any queue that wasn't processed in near time
+    await runCronBatch();
+  };
+
+  var tries : Nat = 0;
+  func runCronBatch() : async () {
     await runCron();
+
+    let pendingCrons = await pendingCronJobs();
+    let positiveElements = Array.filter<Nat>(pendingCrons, func x = x > 0);
+
+    if (positiveElements.size() > 0 and tries < 10) {
+      tries := tries + 1;
+      ignore Timer.setTimer<system>(#seconds 0, runCronBatch);
+    } else if (tries > 0) tries := 0;
   };
 
   func runCron() : async () {
@@ -636,9 +649,10 @@ actor class () = this {
   };
   public query func pendingCronJobs() : async [Nat] {
     [
+      _salesSettlements.size(),
       List.size(_disbursements),
-      List.size(_capEvents),
       unlockedSettlements().size(),
+      List.size(_capEvents),
     ];
   };
   public query func lastTimerFailedAt() : async Time {
@@ -755,6 +769,10 @@ actor class () = this {
                   );
                   _tokenListing.delete(token);
                   _tokenSettlement.delete(token);
+
+                  // run cron outside of this call
+                  ignore Timer.setTimer<system>(#seconds 0, runCronBatch);
+
                   return #ok();
                 };
                 case (_) {
@@ -1010,6 +1028,10 @@ actor class () = this {
         } else {
           _transferTokenToUser(token, receiver);
           _capAddTransfer(token, owner, receiver);
+
+          // run cron outside of this call
+          ignore Timer.setTimer<system>(#seconds 0, runCronBatch);
+
           return #ok(request.amount);
         };
       };
@@ -1626,7 +1648,7 @@ actor class () = this {
     _nextTokenId := _nextTokenId + 1;
 
     // run cron outside of this call
-    ignore Timer.setTimer<system>(#seconds 0, runCron);
+    ignore Timer.setTimer<system>(#seconds 0, runCronBatch);
   };
 
   public shared (msg) func mintItems(data : [[Nat8]], recipients : [AccountIdentifier]) : () {
