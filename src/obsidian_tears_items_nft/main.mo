@@ -586,7 +586,7 @@ actor class () = this {
     } else if (tries > 0) tries := 0;
   };
 
-  func runCron() : async () {
+  public func runCron() : async () {
     try {
       await cronSalesSettlements();
       await cronDisbursements();
@@ -597,7 +597,7 @@ actor class () = this {
     };
   };
 
-  public shared func cronDisbursements() : async () {
+  func cronDisbursements() : async () {
     var _cont : Bool = true;
     while (_cont) {
       _cont := false;
@@ -624,14 +624,14 @@ actor class () = this {
       };
     };
   };
-  public shared func cronSalesSettlements() : async () {
+  func cronSalesSettlements() : async () {
     for (ss in _salesSettlements.entries()) {
       if (ss.1.expires < Time.now()) {
         ignore (await retreive(ss.0));
       };
     };
   };
-  public shared func cronSettlements() : async () {
+  func cronSettlements() : async () {
     for (settlement in unlockedSettlements().vals()) {
       ignore (settle(ExtCore.TokenIdentifier.fromPrincipal(Principal.fromActor(this), settlement.0)));
     };
@@ -912,7 +912,7 @@ actor class () = this {
   func _capAdd(event : CapIndefiniteEvent) : () {
     _capEvents := List.push(event, _capEvents);
   };
-  public shared func cronCapEvents() : async () {
+  func cronCapEvents() : async () {
     var _cont : Bool = true;
     while (_cont) {
       _cont := false;
